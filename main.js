@@ -3,13 +3,16 @@
 /**
  * ioBroker.vidaa — controllo TV/proiettori Hisense VIDAA via il broker MQTT integrato.
  * Stile upstream: classe singola Vidaa extends utils.Adapter + helper in lib/.
+ *
+ * Le credenziali di pairing (uuid, clientId, username, accessToken, refreshToken, host) vengono
+ * salvate nello STATO `info.credentials` (JSON), NON nella config native dell'istanza: così il
+ * pannello admin non le sovrascrive e non si innescano riavvii a ogni salvataggio del token.
  */
 
 const utils = require('@iobroker/adapter-core');
 const VidaaClient = require('./lib/vidaa-client');
 const { generateUuid } = require('./lib/credentials');
 
-// mappa pulsanti control -> tasto KEY_* del telecomando
 const KEY_BUTTONS = {
     power: 'KEY_POWER',
     volumeUp: 'KEY_VOLUMEUP',
@@ -38,6 +41,7 @@ class Vidaa extends utils.Adapter {
         this.pairClient = null;
         this.refreshTimer = null;
         this.apps = [];
+        this.creds = {}; // { host, uuid, clientId, username, accessToken, refreshToken }
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('message', this.onMessage.bind(this));
@@ -46,37 +50,52 @@ class Vidaa extends utils.Adapter {
 
     async onReady() {
         this.setState('info.connection', false, true);
-
-        // uuid stabile (identifica il client; va mantenuto)
-        if (!this.config.uuid) {
-            const uuid = generateUuid();
-            await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, { native: { uuid } });
-            this.log.info(`Generato uuid client ${uuid} (riavvio per applicarlo)`);
-            return; // il restart riparte con uuid in config
-        }
-
         await this.createObjects();
         this.subscribeStates('control.*');
 
-        if (!this.config.host) {
+        await this.loadCreds();
+        if (!this.creds.uuid) {
+            this.creds.uuid = generateUuid();
+            await this.saveCreds();
+            this.log.info(`Generato uuid client ${this.creds.uuid}`);
+        }
+
+        const host = this.config.host || this.creds.host;
+        if (!host) {
             this.log.warn('Nessun IP configurato. Apri le impostazioni e fai il pairing.');
             return;
         }
-        if (!this.config.accessToken) {
+        if (!this.creds.accessToken) {
             this.log.warn('Non accoppiato. Apri le impostazioni → Avvia pairing e inserisci il PIN.');
             return;
         }
         this.connectToken();
     }
 
+    // ---- credenziali in stato (non in native!) -------------------------
+    async loadCreds() {
+        try {
+            const st = await this.getStateAsync('info.credentials');
+            this.creds = st && st.val ? JSON.parse(st.val) : {};
+        } catch (e) {
+            this.creds = {};
+        }
+    }
+
+    async saveCreds() {
+        await this.setStateAsync('info.credentials', JSON.stringify(this.creds), true);
+    }
+
+    // ---- connessione (token mode) --------------------------------------
     connectToken() {
+        const host = this.config.host || this.creds.host;
         this.client = new VidaaClient({
-            host: this.config.host,
-            uuid: this.config.uuid,
-            clientId: this.config.clientId,
-            username: this.config.username,
-            accessToken: this.config.accessToken,
-            refreshToken: this.config.refreshToken,
+            host,
+            uuid: this.creds.uuid,
+            clientId: this.creds.clientId,
+            username: this.creds.username,
+            accessToken: this.creds.accessToken,
+            refreshToken: this.creds.refreshToken,
             log: this.log,
         });
 
@@ -95,39 +114,47 @@ class Vidaa extends utils.Adapter {
 
         this.client.connect('token');
 
-        // refresh token ogni 24h (accessToken dura ~48h)
-        this.refreshTimer = this.setInterval(() => this.client && this.client.refresh(), 24 * 3600 * 1000);
+        if (!this.refreshTimer) {
+            this.refreshTimer = this.setInterval(() => this.client && this.client.refresh(), 24 * 3600 * 1000);
+        }
     }
 
     async saveToken(tok) {
-        await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, {
-            native: {
-                clientId: tok.clientId,
-                username: tok.username,
-                uuid: tok.uuid,
-                accessToken: tok.accessToken,
-                refreshToken: tok.refreshToken,
-            },
+        Object.assign(this.creds, {
+            clientId: tok.clientId,
+            username: tok.username,
+            uuid: tok.uuid || this.creds.uuid,
+            accessToken: tok.accessToken,
+            refreshToken: tok.refreshToken || this.creds.refreshToken,
         });
+        await this.saveCreds();
+        if (this.client) {
+            this.client.accessToken = this.creds.accessToken;
+            this.client.refreshToken = this.creds.refreshToken;
+        }
         this.log.info('Token VIDAA aggiornato e salvato');
     }
 
     // ---- oggetti --------------------------------------------------------
     async createObjects() {
+        // info.credentials (serve anche su upgrade, dove gli instanceObjects non vengono ricreati)
+        await this.setObjectNotExistsAsync('info.credentials', {
+            type: 'state',
+            common: { name: 'Pairing credentials (internal)', type: 'string', role: 'json', read: true, write: false, def: '' },
+            native: {},
+        });
+
         const C = (id, common) => this.setObjectNotExistsAsync(`control.${id}`, { type: 'state', common, native: {} });
         const S = (id, common) => this.setObjectNotExistsAsync(`state.${id}`, { type: 'state', common, native: {} });
 
-        // pulsanti
         for (const id of Object.keys(KEY_BUTTONS)) {
-            const role = id === 'mute' ? 'button' : (id.startsWith('volume') ? 'button' : 'button');
-            await C(id, { name: id, type: 'boolean', role, read: false, write: true, def: false });
+            await C(id, { name: id, type: 'boolean', role: 'button', read: false, write: true, def: false });
         }
         await C('volume', { name: 'volume', type: 'number', role: 'level.volume', min: 0, max: 100, read: true, write: true });
         await C('key', { name: 'send raw KEY_*', type: 'string', role: 'text', read: false, write: true });
         await C('source', { name: 'source/input', type: 'string', role: 'media.input', read: true, write: true, states: SOURCE_STATES });
         await C('app', { name: 'launch app by name', type: 'string', role: 'text', read: false, write: true });
 
-        // stati
         await S('volume', { name: 'volume', type: 'number', role: 'level.volume', min: 0, max: 100, read: true, write: false });
         await S('mute', { name: 'mute', type: 'boolean', role: 'media.mute', read: true, write: false });
         await S('source', { name: 'source', type: 'string', role: 'media.input', read: true, write: false });
@@ -183,16 +210,23 @@ class Vidaa extends utils.Adapter {
         const reply = (res) => obj.callback && this.sendTo(obj.from, obj.command, res, obj.callback);
 
         if (obj.command === 'pairStart') {
-            const host = (obj.message && obj.message.host) || this.config.host;
+            const host = (obj.message && obj.message.host) || this.config.host || this.creds.host;
             if (!host) return reply({ error: 'Inserisci prima l\'IP del proiettore' });
+            if (!this.creds.uuid) {
+                this.creds.uuid = generateUuid();
+                await this.saveCreds();
+            }
             try {
                 if (this.pairClient) this.pairClient.disconnect();
-                this.pairClient = new VidaaClient({ host, uuid: this.config.uuid, log: this.log });
+                this.pairClient = new VidaaClient({ host, uuid: this.creds.uuid, log: this.log });
                 let replied = false;
-                this.pairClient.once('pinRequested', () =>
-                    !replied && (replied = true, reply({ result: 'PIN mostrato sullo schermo del proiettore. Inseriscilo qui sotto.' })));
-                this.pairClient.once('error', (e) => !replied && (replied = true, reply({ error: String(e && e.message || e) })));
-                setTimeout(() => !replied && (replied = true, reply({ error: 'Timeout connessione al proiettore' })), 15000);
+                this.pairClient.once('pinRequested', () => {
+                    if (!replied) { replied = true; reply({ result: 'PIN mostrato sullo schermo del proiettore. Inseriscilo qui sotto e premi «Conferma PIN».' }); }
+                });
+                this.pairClient.once('error', (e) => {
+                    if (!replied) { replied = true; reply({ error: String((e && e.message) || e) }); }
+                });
+                setTimeout(() => { if (!replied) { replied = true; reply({ error: 'Timeout connessione al proiettore' }); } }, 15000);
                 this.pairClient.connect('pairing');
             } catch (e) {
                 reply({ error: String(e.message || e) });
@@ -208,21 +242,24 @@ class Vidaa extends utils.Adapter {
             this.pairClient.once('token', async (tok) => {
                 if (replied) return;
                 replied = true;
-                await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, {
-                    native: {
-                        host: this.pairClient.host,
-                        clientId: tok.clientId,
-                        username: tok.username,
-                        uuid: tok.uuid,
-                        accessToken: tok.accessToken,
-                        refreshToken: tok.refreshToken,
-                    },
+                Object.assign(this.creds, {
+                    host: this.pairClient.host,
+                    uuid: tok.uuid || this.creds.uuid,
+                    clientId: tok.clientId,
+                    username: tok.username,
+                    accessToken: tok.accessToken,
+                    refreshToken: tok.refreshToken,
                 });
+                await this.saveCreds();
                 this.pairClient.disconnect();
                 this.pairClient = null;
-                reply({ result: 'Pairing riuscito! L\'adapter si riavvia e si connette.' });
+                // avvia subito la connessione vera (senza riavvio)
+                if (this.client) this.client.disconnect();
+                this.client = null;
+                this.connectToken();
+                reply({ result: 'Pairing riuscito! Connessione in corso.' });
             });
-            setTimeout(() => !replied && (replied = true, reply({ error: 'Nessun token (PIN errato o scaduto). Riprova.' })), 12000);
+            setTimeout(() => { if (!replied) { replied = true; reply({ error: 'Nessun token (PIN errato o scaduto). Riprova.' }); } }, 12000);
             this.pairClient.submitPin(pin);
             return;
         }

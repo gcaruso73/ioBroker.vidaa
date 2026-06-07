@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "news": {
+      "0.1.1": {
+        "en": "Fix: store pairing token in a state instead of instance config (no more restart loop / token overwrite by admin)",
+        "de": "Fix: Pairing-Token in einem State statt in der Instanz-Konfig speichern (kein Neustart-Loop / Token-Überschreiben mehr)",
+        "it": "Fix: token di pairing salvato in uno stato invece che nella config istanza (niente loop di riavvii / sovrascrittura del token dall'admin)"
+      },
       "0.1.0": {
         "en": "Initial release: MQTT control of Hisense VIDAA TVs/projectors with PIN pairing",
         "de": "Erste Version: MQTT-Steuerung von Hisense VIDAA TVs/Beamern mit PIN-Pairing",
@@ -51,23 +56,10 @@
       {
         "js-controller": ">=5.0.19"
       }
-    ],
-    "encryptedNative": [
-      "accessToken",
-      "refreshToken"
-    ],
-    "protectedNative": [
-      "accessToken",
-      "refreshToken"
     ]
   },
   "native": {
     "host": "",
-    "uuid": "",
-    "clientId": "",
-    "username": "",
-    "accessToken": "",
-    "refreshToken": "",
     "pin": ""
   },
   "objects": [],
@@ -88,6 +80,19 @@
         "read": true,
         "write": false,
         "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.credentials",
+      "type": "state",
+      "common": {
+        "role": "json",
+        "name": "Pairing credentials (internal)",
+        "type": "string",
+        "read": true,
+        "write": false,
+        "def": ""
       },
       "native": {}
     }
