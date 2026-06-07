@@ -39,9 +39,14 @@ the MQTT broker is not reachable.
 
 ## Credits
 
-VIDAA protocol details based on open reverse-engineering work by the community
-(`tombabolewski/vidaa-control` and others). Re-implemented for ioBroker.
+This adapter stands on community reverse-engineering of the VIDAA MQTT protocol. In particular the
+credential algorithm, protocol/topics and the bundled client certificate come from
+**[tombabolewski/vidaa-control](https://github.com/tombabolewski/vidaa-control)** (MIT, © 2025 Tom
+Babolewski), with additional references from `Krazy998/mqtt-hisensetv`, `warrenrees/ha_vidaatv`,
+`sehaas/ha_hisense_tv` and others.
+
+Full acknowledgements and third-party license notices: see **[CREDITS.md](CREDITS.md)**.
 
 ## License
 
-MIT © Giovanni Caruso
+MIT © Giovanni Caruso. Includes MIT-licensed portions © 2025 Tom Babolewski (see CREDITS.md).
