@@ -1,0 +1,9 @@
+node_modules/
+.idea/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+tmp/
+.vscode/
+package-lock.json

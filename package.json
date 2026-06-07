@@ -1,0 +1,46 @@
+{
+  "name": "iobroker.vidaa",
+  "version": "0.1.0",
+  "description": "Control Hisense VIDAA TVs and projectors via their built-in MQTT broker",
+  "author": {
+    "name": "Giovanni Caruso",
+    "email": "giovanni@caruso.email"
+  },
+  "homepage": "https://github.com/gcaruso73/ioBroker.vidaa",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "vidaa",
+    "hisense",
+    "tv",
+    "projector",
+    "mqtt"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gcaruso73/ioBroker.vidaa.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@iobroker/adapter-core": "^3.2.3",
+    "mqtt": "^5.10.1"
+  },
+  "devDependencies": {},
+  "main": "main.js",
+  "files": [
+    "admin/",
+    "lib/",
+    "io-package.json",
+    "LICENSE",
+    "main.js"
+  ],
+  "scripts": {
+    "test:package": "node -e \"require('./io-package.json');require('./package.json')\""
+  },
+  "bugs": {
+    "url": "https://github.com/gcaruso73/ioBroker.vidaa/issues"
+  },
+  "readmeFilename": "README.md"
+}

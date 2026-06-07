@@ -1,0 +1,95 @@
+{
+  "common": {
+    "name": "vidaa",
+    "version": "0.1.0",
+    "news": {
+      "0.1.0": {
+        "en": "Initial release: MQTT control of Hisense VIDAA TVs/projectors with PIN pairing",
+        "de": "Erste Version: MQTT-Steuerung von Hisense VIDAA TVs/Beamern mit PIN-Pairing",
+        "it": "Prima versione: controllo MQTT di TV/proiettori Hisense VIDAA con pairing via PIN"
+      }
+    },
+    "title": "Hisense VIDAA",
+    "titleLang": {
+      "en": "Hisense VIDAA control",
+      "de": "Hisense VIDAA Steuerung",
+      "it": "Controllo Hisense VIDAA"
+    },
+    "desc": {
+      "en": "Control Hisense VIDAA TVs and projectors via their built-in MQTT broker",
+      "de": "Steuerung von Hisense VIDAA TVs und Beamern über deren integrierten MQTT-Broker",
+      "it": "Controllo di TV e proiettori Hisense VIDAA tramite il broker MQTT integrato"
+    },
+    "authors": [
+      "Giovanni Caruso <giovanni@caruso.email>"
+    ],
+    "keywords": [
+      "vidaa",
+      "hisense",
+      "tv",
+      "projector",
+      "mqtt"
+    ],
+    "license": "MIT",
+    "platform": "Javascript/Node.js",
+    "main": "main.js",
+    "icon": "vidaa.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/gcaruso73/ioBroker.vidaa/master/admin/vidaa.png",
+    "readme": "https://github.com/gcaruso73/ioBroker.vidaa/blob/master/README.md",
+    "loglevel": "info",
+    "mode": "daemon",
+    "type": "multimedia",
+    "compact": true,
+    "messagebox": true,
+    "connectionType": "local",
+    "dataSource": "push",
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=5.0.19"
+      }
+    ],
+    "encryptedNative": [
+      "accessToken",
+      "refreshToken"
+    ],
+    "protectedNative": [
+      "accessToken",
+      "refreshToken"
+    ]
+  },
+  "native": {
+    "host": "",
+    "uuid": "",
+    "clientId": "",
+    "username": "",
+    "accessToken": "",
+    "refreshToken": "",
+    "pin": ""
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": { "name": "Information" },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Device or service connected",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
+}

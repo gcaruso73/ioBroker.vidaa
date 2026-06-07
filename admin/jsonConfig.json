@@ -1,0 +1,64 @@
+{
+  "type": "panel",
+  "items": {
+    "_intro": {
+      "type": "staticText",
+      "newLine": true,
+      "text": {
+        "it": "1) Inserisci l'IP del proiettore.  2) Premi «Avvia pairing»: sullo schermo comparirà un PIN.  3) Scrivi il PIN qui sotto entro ~15 secondi e premi «Conferma PIN».",
+        "en": "1) Enter the projector IP.  2) Press «Start pairing»: a PIN appears on screen.  3) Type the PIN below within ~15 seconds and press «Confirm PIN».",
+        "de": "1) Beamer-IP eingeben.  2) «Pairing starten» drücken: am Bildschirm erscheint eine PIN.  3) PIN unten innerhalb ~15 Sekunden eingeben und «PIN bestätigen» drücken."
+      }
+    },
+    "host": {
+      "type": "text",
+      "newLine": true,
+      "sm": 12,
+      "md": 6,
+      "label": {
+        "it": "IP del proiettore / TV",
+        "en": "Projector / TV IP",
+        "de": "Beamer-/TV-IP"
+      },
+      "placeholder": "10.0.0.215"
+    },
+    "pairStart": {
+      "type": "sendTo",
+      "newLine": true,
+      "command": "pairStart",
+      "jsonData": "{\"host\": \"${data.host}\"}",
+      "variant": "contained",
+      "showProcessDialog": true,
+      "label": {
+        "it": "Avvia pairing (mostra PIN)",
+        "en": "Start pairing (show PIN)",
+        "de": "Pairing starten (PIN anzeigen)"
+      }
+    },
+    "pin": {
+      "type": "text",
+      "newLine": true,
+      "sm": 12,
+      "md": 4,
+      "maxLength": 8,
+      "label": {
+        "it": "PIN mostrato a schermo",
+        "en": "PIN shown on screen",
+        "de": "PIN am Bildschirm"
+      }
+    },
+    "pairSubmit": {
+      "type": "sendTo",
+      "newLine": true,
+      "command": "pairSubmit",
+      "jsonData": "{\"pin\": \"${data.pin}\"}",
+      "variant": "contained",
+      "showProcessDialog": true,
+      "label": {
+        "it": "Conferma PIN",
+        "en": "Confirm PIN",
+        "de": "PIN bestätigen"
+      }
+    }
+  }
+}
