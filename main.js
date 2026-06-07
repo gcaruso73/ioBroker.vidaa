@@ -107,9 +107,7 @@ class Vidaa extends utils.Adapter {
         this.client.on('error', (e) => this.log.debug(`MQTT error: ${e && e.message}`));
         this.client.on('state', (d) => this.onTvState(d));
         this.client.on('volume', (d) => this.onTvVolume(d));
-        this.client.on('apps', (d) => {
-            if (Array.isArray(d)) this.apps = d;
-        });
+        this.client.on('apps', (d) => this.onApps(d));
         this.client.on('token', (tok) => this.saveToken(tok));
 
         this.client.connect('token');
@@ -153,7 +151,8 @@ class Vidaa extends utils.Adapter {
         await C('volume', { name: 'volume', type: 'number', role: 'level.volume', min: 0, max: 100, read: true, write: true });
         await C('key', { name: 'send raw KEY_*', type: 'string', role: 'text', read: false, write: true });
         await C('source', { name: 'source/input', type: 'string', role: 'media.input', read: true, write: true, states: SOURCE_STATES });
-        await C('app', { name: 'launch app by name', type: 'string', role: 'text', read: false, write: true });
+        await C('app', { name: 'launch app by name', type: 'string', role: 'text', read: true, write: true });
+        await S('apps', { name: 'installed apps (json)', type: 'string', role: 'json', read: true, write: false });
 
         await S('volume', { name: 'volume', type: 'number', role: 'level.volume', min: 0, max: 100, read: true, write: false });
         await S('mute', { name: 'mute', type: 'boolean', role: 'media.mute', read: true, write: false });
@@ -178,6 +177,21 @@ class Vidaa extends utils.Adapter {
         if (d && typeof d === 'object' && d.volume_value !== undefined) {
             this.setState('state.volume', Number(d.volume_value), true);
             this.setState('control.volume', Number(d.volume_value), true);
+        }
+    }
+
+    async onApps(d) {
+        if (!Array.isArray(d)) return;
+        this.apps = d.filter((a) => a && a.name);
+        const list = this.apps.map((a) => ({ name: a.name, appId: a.appId, url: a.url }));
+        this.setState('state.apps', JSON.stringify(list), true);
+        // popola il menu a tendina di control.app con i nomi delle app installate
+        const states = {};
+        for (const a of this.apps) states[a.name] = a.name;
+        try {
+            await this.extendObjectAsync('control.app', { common: { states } });
+        } catch (e) {
+            this.log.debug(`extend control.app states: ${e && e.message}`);
         }
     }
 

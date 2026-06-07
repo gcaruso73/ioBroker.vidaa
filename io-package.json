@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "news": {
+      "0.1.2": {
+        "en": "App launch: correct payload {appId,name,url}; expose installed apps in state.apps and as a dropdown on control.app",
+        "de": "App-Start: korrektes Payload {appId,name,url}; installierte Apps in state.apps und als Dropdown bei control.app",
+        "it": "Avvio app: payload corretto {appId,name,url}; app installate esposte in state.apps e come menu a tendina su control.app"
+      },
       "0.1.1": {
         "en": "Fix: store pairing token in a state instead of instance config (no more restart loop / token overwrite by admin)",
         "de": "Fix: Pairing-Token in einem State statt in der Instanz-Konfig speichern (kein Neustart-Loop / Token-Überschreiben mehr)",
