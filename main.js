@@ -192,11 +192,7 @@ class Vidaa extends utils.Adapter {
         this.setState('state.sources', JSON.stringify(list), true);
         const states = {};
         for (const s of this.sources) states[String(s.sourceid)] = s.displayname || s.sourcename || String(s.sourceid);
-        try {
-            await this.extendObjectAsync('control.source', { common: { states } });
-        } catch (e) {
-            this.log.debug(`extend control.source states: ${e && e.message}`);
-        }
+        await this.replaceStates('control.source', states);
     }
 
     onTvVolume(d) {
@@ -206,19 +202,28 @@ class Vidaa extends utils.Adapter {
         }
     }
 
+    /** Sostituisce INTERAMENTE common.states (extendObject farebbe un merge -> voci vecchie residue). */
+    async replaceStates(id, states) {
+        try {
+            const obj = await this.getObjectAsync(id);
+            if (!obj) return;
+            obj.common = obj.common || {};
+            obj.common.states = states;
+            await this.setObjectAsync(id, obj);
+        } catch (e) {
+            this.log.debug(`replaceStates ${id}: ${e && e.message}`);
+        }
+    }
+
     async onApps(d) {
         if (!Array.isArray(d)) return;
         this.apps = d.filter((a) => a && a.name);
         const list = this.apps.map((a) => ({ name: a.name, appId: a.appId, url: a.url }));
         this.setState('state.apps', JSON.stringify(list), true);
-        // popola il menu a tendina di control.app con i nomi delle app installate
+        // menu a tendina di control.app con i nomi delle app installate (sostituzione completa)
         const states = {};
         for (const a of this.apps) states[a.name] = a.name;
-        try {
-            await this.extendObjectAsync('control.app', { common: { states } });
-        } catch (e) {
-            this.log.debug(`extend control.app states: ${e && e.message}`);
-        }
+        await this.replaceStates('control.app', states);
     }
 
     // ---- comandi da ioBroker -------------------------------------------

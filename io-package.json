@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "news": {
+      "0.1.5": {
+        "en": "Fix source/app dropdown: fully replace common.states (extendObject merged, leaving stale numeric entries like 'HDMI1 (3)' that didn't switch)",
+        "de": "Fix Quellen-/App-Dropdown: common.states komplett ersetzen (extendObject hat gemerged und alte numerische Einträge wie 'HDMI1 (3)' belassen, die nicht schalteten)",
+        "it": "Fix menu sorgenti/app: sostituzione completa di common.states (extendObject faceva merge, lasciando voci numeriche vecchie tipo 'HDMI1 (3)' che non cambiavano ingresso)"
+      },
       "0.1.4": {
         "en": "Auto-refresh app/source lists periodically (every 5 min) and on every (re)connect, so newly installed apps appear automatically",
         "de": "App-/Quellenlisten periodisch (alle 5 Min) und bei jedem (Neu-)Verbinden automatisch aktualisieren, damit neu installierte Apps automatisch erscheinen",
