@@ -32,8 +32,6 @@ const KEY_BUTTONS = {
     stop: 'KEY_STOP',
 };
 
-const SOURCE_STATES = { '0': 'TV', '1': 'AV', '2': 'Component', '3': 'HDMI1', '4': 'HDMI2', '5': 'HDMI3', '6': 'HDMI4' };
-
 class Vidaa extends utils.Adapter {
     constructor(options) {
         super({ ...options, name: 'vidaa' });
@@ -41,6 +39,7 @@ class Vidaa extends utils.Adapter {
         this.pairClient = null;
         this.refreshTimer = null;
         this.apps = [];
+        this.sources = [];
         this.creds = {}; // { host, uuid, clientId, username, accessToken, refreshToken }
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
@@ -108,6 +107,7 @@ class Vidaa extends utils.Adapter {
         this.client.on('state', (d) => this.onTvState(d));
         this.client.on('volume', (d) => this.onTvVolume(d));
         this.client.on('apps', (d) => this.onApps(d));
+        this.client.on('sources', (d) => this.onSources(d));
         this.client.on('token', (tok) => this.saveToken(tok));
 
         this.client.connect('token');
@@ -150,9 +150,11 @@ class Vidaa extends utils.Adapter {
         }
         await C('volume', { name: 'volume', type: 'number', role: 'level.volume', min: 0, max: 100, read: true, write: true });
         await C('key', { name: 'send raw KEY_*', type: 'string', role: 'text', read: false, write: true });
-        await C('source', { name: 'source/input', type: 'string', role: 'media.input', read: true, write: true, states: SOURCE_STATES });
+        await C('source', { name: 'source/input (sourceid)', type: 'string', role: 'media.input', read: true, write: true });
         await C('app', { name: 'launch app by name', type: 'string', role: 'text', read: true, write: true });
         await S('apps', { name: 'installed apps (json)', type: 'string', role: 'json', read: true, write: false });
+        await S('sources', { name: 'input sources (json)', type: 'string', role: 'json', read: true, write: false });
+        await S('currentApp', { name: 'current app', type: 'string', role: 'text', read: true, write: false });
 
         await S('volume', { name: 'volume', type: 'number', role: 'level.volume', min: 0, max: 100, read: true, write: false });
         await S('mute', { name: 'mute', type: 'boolean', role: 'media.mute', read: true, write: false });
@@ -166,10 +168,27 @@ class Vidaa extends utils.Adapter {
         if (!d || typeof d !== 'object') return;
         this.setState('state.raw', JSON.stringify(d), true);
         if (d.statetype) this.setState('state.statetype', d.statetype, true);
-        if (d.sourcename || d.sourceid) {
-            const src = d.sourcename || SOURCE_STATES[String(d.sourceid)] || String(d.sourceid);
+        if (d.statetype === 'sourceswitch' && (d.sourcename || d.sourceid)) {
+            const src = d.displayname || d.sourcename || String(d.sourceid);
             this.setState('state.source', src, true);
             this.setState('control.source', String(d.sourceid), true);
+            this.setState('state.currentApp', '', true);
+        } else if (d.statetype === 'app' && d.name) {
+            this.setState('state.currentApp', d.name, true);
+        }
+    }
+
+    async onSources(d) {
+        if (!Array.isArray(d)) return;
+        this.sources = d.filter((s) => s && s.sourceid !== undefined);
+        const list = this.sources.map((s) => ({ sourceid: s.sourceid, name: s.displayname || s.sourcename }));
+        this.setState('state.sources', JSON.stringify(list), true);
+        const states = {};
+        for (const s of this.sources) states[String(s.sourceid)] = s.displayname || s.sourcename || String(s.sourceid);
+        try {
+            await this.extendObjectAsync('control.source', { common: { states } });
+        } catch (e) {
+            this.log.debug(`extend control.source states: ${e && e.message}`);
         }
     }
 

@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "news": {
+      "0.1.3": {
+        "en": "Input switching: use the device's real source IDs from sourcelist (e.g. HDMI1, not numeric); control.source becomes a dropdown; add state.sources and state.currentApp",
+        "de": "Quellenwahl: echte Source-IDs des Geräts aus sourcelist verwenden (z.B. HDMI1, nicht numerisch); control.source als Dropdown; state.sources und state.currentApp ergänzt",
+        "it": "Cambio ingresso: usa i sourceid reali del dispositivo dalla sourcelist (es. HDMI1, non numerici); control.source diventa un menu a tendina; aggiunti state.sources e state.currentApp"
+      },
       "0.1.2": {
         "en": "App launch: correct payload {appId,name,url}; expose installed apps in state.apps and as a dropdown on control.app",
         "de": "App-Start: korrektes Payload {appId,name,url}; installierte Apps in state.apps und als Dropdown bei control.app",
