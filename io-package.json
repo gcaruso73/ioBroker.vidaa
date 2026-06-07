@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "news": {
+      "0.1.4": {
+        "en": "Auto-refresh app/source lists periodically (every 5 min) and on every (re)connect, so newly installed apps appear automatically",
+        "de": "App-/Quellenlisten periodisch (alle 5 Min) und bei jedem (Neu-)Verbinden automatisch aktualisieren, damit neu installierte Apps automatisch erscheinen",
+        "it": "Aggiornamento automatico di app/sorgenti periodico (ogni 5 min) e a ogni (ri)connessione, così le app appena installate compaiono da sole"
+      },
       "0.1.3": {
         "en": "Input switching: use the device's real source IDs from sourcelist (e.g. HDMI1, not numeric); control.source becomes a dropdown; add state.sources and state.currentApp",
         "de": "Quellenwahl: echte Source-IDs des Geräts aus sourcelist verwenden (z.B. HDMI1, nicht numerisch); control.source als Dropdown; state.sources und state.currentApp ergänzt",

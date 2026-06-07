@@ -38,6 +38,7 @@ class Vidaa extends utils.Adapter {
         this.client = null;
         this.pairClient = null;
         this.refreshTimer = null;
+        this.listTimer = null;
         this.apps = [];
         this.sources = [];
         this.creds = {}; // { host, uuid, clientId, username, accessToken, refreshToken }
@@ -114,6 +115,12 @@ class Vidaa extends utils.Adapter {
 
         if (!this.refreshTimer) {
             this.refreshTimer = this.setInterval(() => this.client && this.client.refresh(), 24 * 3600 * 1000);
+        }
+        // refresh periodico di app/sorgenti/stato: cattura nuove app installate o ingressi cambiati
+        if (!this.listTimer) {
+            this.listTimer = this.setInterval(() => {
+                if (this.client && this.client.connected) this.client.queryAll();
+            }, 5 * 60 * 1000);
         }
     }
 
@@ -301,6 +308,7 @@ class Vidaa extends utils.Adapter {
     onUnload(callback) {
         try {
             if (this.refreshTimer) this.clearInterval(this.refreshTimer);
+            if (this.listTimer) this.clearInterval(this.listTimer);
             if (this.client) this.client.disconnect();
             if (this.pairClient) this.pairClient.disconnect();
             this.setState('info.connection', false, true);
