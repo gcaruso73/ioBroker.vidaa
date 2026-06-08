@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "news": {
+      "0.1.6": {
+        "en": "control.app/control.source reset to empty after each command so re-selecting the same entry re-triggers it; stop pinning control.source to current input",
+        "de": "control.app/control.source nach jedem Befehl leeren, damit erneutes Auswählen desselben Eintrags wieder auslöst; control.source nicht mehr an aktuelle Quelle binden",
+        "it": "control.app/control.source azzerati dopo ogni comando così riselezionare la stessa voce ri-scatta; control.source non più ancorato all'ingresso corrente"
+      },
       "0.1.5": {
         "en": "Fix source/app dropdown: fully replace common.states (extendObject merged, leaving stale numeric entries like 'HDMI1 (3)' that didn't switch)",
         "de": "Fix Quellen-/App-Dropdown: common.states komplett ersetzen (extendObject hat gemerged und alte numerische Einträge wie 'HDMI1 (3)' belassen, die nicht schalteten)",

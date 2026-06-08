@@ -178,7 +178,7 @@ class Vidaa extends utils.Adapter {
         if (d.statetype === 'sourceswitch' && (d.sourcename || d.sourceid)) {
             const src = d.displayname || d.sourcename || String(d.sourceid);
             this.setState('state.source', src, true);
-            this.setState('control.source', String(d.sourceid), true);
+            // NB: non sincronizziamo control.source (resta un selettore d'azione, non si "ancora")
             this.setState('state.currentApp', '', true);
         } else if (d.statetype === 'app' && d.name) {
             this.setState('state.currentApp', d.name, true);
@@ -241,11 +241,16 @@ class Vidaa extends utils.Adapter {
         } else if (key === 'key') {
             if (state.val) this.client.sendKey(String(state.val));
         } else if (key === 'source') {
+            if (!state.val) return;
             this.client.setSource(state.val);
+            // azzera: così riselezionare lo stesso ingresso ri-scatta il comando
+            this.setState('control.source', '', true);
         } else if (key === 'app') {
+            if (!state.val) return;
             const app = this.apps.find((a) => a && (a.name === state.val || a.appId === String(state.val)));
             if (app) this.client.launchApp(app);
             else this.log.warn(`App non trovata: ${state.val}`);
+            this.setState('control.app', '', true);
         }
     }
 
