@@ -23,7 +23,7 @@ const KEY_BUTTONS = {
     left: 'KEY_LEFT',
     right: 'KEY_RIGHT',
     ok: 'KEY_OK',
-    back: 'KEY_BACK',
+    back: 'KEY_RETURNS', // VIDAA: "back"=KEY_RETURNS; KEY_BACK è invece il REWIND
     home: 'KEY_HOME',
     menu: 'KEY_MENU',
     exit: 'KEY_EXIT',

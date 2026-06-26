@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "news": {
+      "0.1.7": {
+        "en": "Fix back button: send KEY_RETURNS (on VIDAA KEY_BACK is actually rewind)",
+        "de": "Zurück-Taste korrigiert: KEY_RETURNS senden (bei VIDAA ist KEY_BACK in Wirklichkeit Rücklauf)",
+        "it": "Corretto tasto back: invia KEY_RETURNS (su VIDAA KEY_BACK è in realtà il rewind)"
+      },
       "0.1.6": {
         "en": "control.app/control.source reset to empty after each command so re-selecting the same entry re-triggers it; stop pinning control.source to current input",
         "de": "control.app/control.source nach jedem Befehl leeren, damit erneutes Auswählen desselben Eintrags wieder auslöst; control.source nicht mehr an aktuelle Quelle binden",
