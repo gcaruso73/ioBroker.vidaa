@@ -30,6 +30,8 @@ const KEY_BUTTONS = {
     play: 'KEY_PLAY',
     pause: 'KEY_PAUSE',
     stop: 'KEY_STOP',
+    channelUp: 'KEY_CHANNELUP',
+    channelDown: 'KEY_CHANNELDOWN',
 };
 
 class Vidaa extends utils.Adapter {
@@ -207,6 +209,7 @@ class Vidaa extends utils.Adapter {
         await C('key', { name: 'send raw KEY_*', type: 'string', role: 'text', read: false, write: true });
         await C('source', { name: 'source/input (sourceid)', type: 'string', role: 'media.input', read: true, write: true });
         await C('app', { name: 'launch app by name', type: 'string', role: 'text', read: true, write: true });
+        await C('channel', { name: 'vai al canale per numero (es. 401) — solo in sorgente DTV/TV', type: 'string', role: 'media.channel', read: false, write: true });
         await S('apps', { name: 'installed apps (json)', type: 'string', role: 'json', read: true, write: false });
         await S('sources', { name: 'input sources (json)', type: 'string', role: 'json', read: true, write: false });
         await S('currentApp', { name: 'current app', type: 'string', role: 'text', read: true, write: false });
@@ -299,6 +302,11 @@ class Vidaa extends utils.Adapter {
             if (app) this.client.launchApp(app);
             else this.log.warn(`App non trovata: ${state.val}`);
             this.setState('control.app', '', true);
+        } else if (key === 'channel') {
+            if (state.val === '' || state.val === null || state.val === undefined) return;
+            this.client.sendChannel(state.val);
+            // azzera: così reinserire lo stesso numero ri-scatta la sintonizzazione
+            this.setState('control.channel', '', true);
         }
     }
 

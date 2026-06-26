@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "news": {
+      "0.1.9": {
+        "en": "Channel control for DTV/TV source: control.channelUp / control.channelDown buttons and control.channel to tune by number (types the digits)",
+        "de": "Kanalsteuerung für DTV/TV-Quelle: Tasten control.channelUp / control.channelDown und control.channel zum direkten Eingeben der Kanalnummer (tippt die Ziffern)",
+        "it": "Controllo canali in sorgente DTV/TV: pulsanti control.channelUp / control.channelDown e control.channel per andare al canale per numero (digita le cifre)"
+      },
       "0.1.8": {
         "en": "No more weekly PIN: token-aware (re)connect — when the access token is expired, connect with the refresh token and mint a fresh one; proactive 6h refresh that rolls the refresh token; auto-reconnect with backoff",
         "de": "Kein wöchentlicher PIN mehr: token-bewusster (Re)Connect — bei abgelaufenem Access-Token via Refresh-Token verbinden und neu ausstellen; proaktiver 6h-Refresh, der das Refresh-Token rollt; Auto-Reconnect mit Backoff",
