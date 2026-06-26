@@ -1,6 +1,6 @@
 {
   "name": "iobroker.vidaa",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Control Hisense VIDAA TVs and projectors via their built-in MQTT broker",
   "author": {
     "name": "Giovanni Caruso",

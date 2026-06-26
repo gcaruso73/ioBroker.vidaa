@@ -1,8 +1,13 @@
 {
   "common": {
     "name": "vidaa",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "news": {
+      "0.1.8": {
+        "en": "No more weekly PIN: token-aware (re)connect — when the access token is expired, connect with the refresh token and mint a fresh one; proactive 6h refresh that rolls the refresh token; auto-reconnect with backoff",
+        "de": "Kein wöchentlicher PIN mehr: token-bewusster (Re)Connect — bei abgelaufenem Access-Token via Refresh-Token verbinden und neu ausstellen; proaktiver 6h-Refresh, der das Refresh-Token rollt; Auto-Reconnect mit Backoff",
+        "it": "Niente più PIN settimanale: (ri)connessione consapevole dei token — se l'accessToken è scaduto ci si connette col refreshToken e se ne conia uno nuovo; refresh proattivo ogni 6h che fa 'rollare' il refreshToken; auto-riconnessione con backoff"
+      },
       "0.1.7": {
         "en": "Fix back button: send KEY_RETURNS (on VIDAA KEY_BACK is actually rewind)",
         "de": "Zurück-Taste korrigiert: KEY_RETURNS senden (bei VIDAA ist KEY_BACK in Wirklichkeit Rücklauf)",

@@ -39,9 +39,12 @@ class Vidaa extends utils.Adapter {
         this.pairClient = null;
         this.refreshTimer = null;
         this.listTimer = null;
+        this.reconnectTimer = null;
+        this.reconnectDelay = 8000; // backoff riconnessione (8s → max 60s)
+        this._unloading = false;
         this.apps = [];
         this.sources = [];
-        this.creds = {}; // { host, uuid, clientId, username, accessToken, refreshToken }
+        this.creds = {}; // { host, uuid, clientId, username, accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt }
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('message', this.onMessage.bind(this));
@@ -96,14 +99,24 @@ class Vidaa extends utils.Adapter {
             username: this.creds.username,
             accessToken: this.creds.accessToken,
             refreshToken: this.creds.refreshToken,
+            accessTokenExpiresAt: this.creds.accessTokenExpiresAt || null,
+            refreshTokenExpiresAt: this.creds.refreshTokenExpiresAt || null,
             log: this.log,
         });
 
         this.client.on('connected', () => {
             this.log.info('Connesso al proiettore VIDAA');
+            this.reconnectDelay = 8000; // riconnesso → reset del backoff
             this.setState('info.connection', true, true);
         });
-        this.client.on('closed', () => this.setState('info.connection', false, true));
+        this.client.on('closed', () => {
+            this.setState('info.connection', false, true);
+            this.scheduleReconnect();
+        });
+        this.client.on('needPair', () => {
+            this.setState('info.connection', false, true);
+            this.log.warn('VIDAA non accoppiato (token scaduti). Impostazioni → Avvia pairing e inserisci il PIN.');
+        });
         this.client.on('error', (e) => this.log.debug(`MQTT error: ${e && e.message}`));
         this.client.on('state', (d) => this.onTvState(d));
         this.client.on('volume', (d) => this.onTvVolume(d));
@@ -111,10 +124,19 @@ class Vidaa extends utils.Adapter {
         this.client.on('sources', (d) => this.onSources(d));
         this.client.on('token', (tok) => this.saveToken(tok));
 
-        this.client.connect('token');
+        try {
+            this.client.connect('token');
+        } catch (e) {
+            this.log.warn(`VIDAA connect: ${e && e.message}`);
+            this.scheduleReconnect();
+        }
 
+        // rinnovo PROATTIVO ben dentro la validita' dell'accessToken (2 giorni): il refreshToken
+        // "rolla" a ogni gettoken, quindi la finestra dei 30 giorni si resetta e non scade mai → niente PIN settimanale.
         if (!this.refreshTimer) {
-            this.refreshTimer = this.setInterval(() => this.client && this.client.refresh(), 24 * 3600 * 1000);
+            this.refreshTimer = this.setInterval(() => {
+                if (this.client && this.client.connected) this.client.refresh();
+            }, 6 * 3600 * 1000);
         }
         // refresh periodico di app/sorgenti/stato: cattura nuove app installate o ingressi cambiati
         if (!this.listTimer) {
@@ -124,18 +146,44 @@ class Vidaa extends utils.Adapter {
         }
     }
 
+    /** Riconnessione gestita dall'adapter: ricostruisce il client (che riscegliera' access|refresh). */
+    scheduleReconnect() {
+        if (this._unloading || this.reconnectTimer) return;
+        const delay = this.reconnectDelay;
+        this.reconnectDelay = Math.min(Math.floor(this.reconnectDelay * 1.5), 60000);
+        this.log.debug(`VIDAA: riconnessione tra ${Math.round(delay / 1000)}s`);
+        this.reconnectTimer = this.setTimeout(() => {
+            this.reconnectTimer = null;
+            if (this._unloading) return;
+            if (this.client) {
+                try { this.client.removeAllListeners(); } catch (e) { /* noop */ }
+                try { this.client.disconnect(); } catch (e) { /* noop */ }
+                this.client = null;
+            }
+            this.connectToken();
+        }, delay);
+    }
+
     async saveToken(tok) {
+        const now = Date.now();
+        const accDays = Number(tok.accessTokenDurationDay) || 2;
+        const refDays = Number(tok.refreshTokenDurationDay) || 30;
         Object.assign(this.creds, {
             clientId: tok.clientId,
             username: tok.username,
             uuid: tok.uuid || this.creds.uuid,
             accessToken: tok.accessToken,
             refreshToken: tok.refreshToken || this.creds.refreshToken,
+            accessTokenExpiresAt: now + accDays * 86400000,
+            // il refreshToken rolla solo se il device ne restituisce uno nuovo; altrimenti tieni la scadenza vecchia
+            refreshTokenExpiresAt: tok.refreshToken ? now + refDays * 86400000 : this.creds.refreshTokenExpiresAt,
         });
         await this.saveCreds();
         if (this.client) {
             this.client.accessToken = this.creds.accessToken;
             this.client.refreshToken = this.creds.refreshToken;
+            this.client.accessTokenExpiresAt = this.creds.accessTokenExpiresAt;
+            this.client.refreshTokenExpiresAt = this.creds.refreshTokenExpiresAt;
         }
         this.log.info('Token VIDAA aggiornato e salvato');
     }
@@ -292,6 +340,7 @@ class Vidaa extends utils.Adapter {
             this.pairClient.once('token', async (tok) => {
                 if (replied) return;
                 replied = true;
+                const now = Date.now();
                 Object.assign(this.creds, {
                     host: this.pairClient.host,
                     uuid: tok.uuid || this.creds.uuid,
@@ -299,6 +348,8 @@ class Vidaa extends utils.Adapter {
                     username: tok.username,
                     accessToken: tok.accessToken,
                     refreshToken: tok.refreshToken,
+                    accessTokenExpiresAt: now + (Number(tok.accessTokenDurationDay) || 2) * 86400000,
+                    refreshTokenExpiresAt: now + (Number(tok.refreshTokenDurationDay) || 30) * 86400000,
                 });
                 await this.saveCreds();
                 this.pairClient.disconnect();
@@ -317,6 +368,8 @@ class Vidaa extends utils.Adapter {
 
     onUnload(callback) {
         try {
+            this._unloading = true;
+            if (this.reconnectTimer) this.clearTimeout(this.reconnectTimer);
             if (this.refreshTimer) this.clearInterval(this.refreshTimer);
             if (this.listTimer) this.clearInterval(this.listTimer);
             if (this.client) this.client.disconnect();
